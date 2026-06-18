@@ -45,6 +45,7 @@ interface ArtifactRecord {
   id: string
   kind: ArtifactKind
   value: string
+  previewPath: string
   href: string
   label: string
   sessionId: string
@@ -136,6 +137,40 @@ function artifactHref(value: string): string {
   }
 
   return value
+}
+
+function isAbsoluteLocalPath(value: string): boolean {
+  return value.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(value)
+}
+
+function resolveArtifactPreviewPath(value: string, cwd?: null | string): string {
+  const path = filePathFromMediaPath(value)
+
+  if (isAbsoluteLocalPath(path) || path.startsWith('~/')) {
+    return path
+  }
+
+  if ((path.startsWith('./') || path.startsWith('../')) && cwd && isAbsoluteLocalPath(cwd)) {
+    const parts = cwd.split(/[\\/]+/).filter(Boolean)
+
+    for (const part of path.split(/[\\/]+/)) {
+      if (!part || part === '.') {
+        continue
+      }
+
+      if (part === '..') {
+        parts.pop()
+      } else {
+        parts.push(part)
+      }
+    }
+
+    const prefix = cwd.startsWith('/') ? '/' : ''
+
+    return `${prefix}${parts.join('/')}`
+  }
+
+  return path
 }
 
 function artifactLabel(value: string): string {
@@ -295,6 +330,7 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
         id: key,
         kind: artifactKind(value),
         value,
+        previewPath: resolveArtifactPreviewPath(value, session.cwd),
         href: artifactHref(value),
         label: artifactLabel(value),
         sessionId: session.id,
@@ -791,7 +827,7 @@ function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, on
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <Button onClick={() => void onPreview(artifact.value)} size="xs" type="button" variant="secondary">
+          <Button onClick={() => void onPreview(artifact.previewPath)} size="xs" type="button" variant="secondary">
             <FileText className="size-3" />
             Preview
           </Button>
@@ -920,7 +956,7 @@ function ActionCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx 
   }
 
   return (
-    <ArtifactCellAction onClick={() => void ctx.onPreview(artifact.value)} title="Preview artifact">
+    <ArtifactCellAction onClick={() => void ctx.onPreview(artifact.previewPath)} title="Preview artifact">
       <span>Preview</span>
     </ArtifactCellAction>
   )
