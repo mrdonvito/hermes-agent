@@ -822,6 +822,7 @@ export function ChatSidebar({
                   (item.id === 'work-queue' && currentView === 'work-queue')
 
                 const isNewSession = item.id === 'new-session'
+                const label = s.nav[item.id] || item.label
 
                 return (
                   <SidebarMenuItem key={item.id}>
@@ -852,13 +853,13 @@ export function ChatSidebar({
 
                         onNavigate(item)
                       }}
-                      tooltip={s.nav[item.id] ?? item.label}
+                      tooltip={label}
                       type="button"
                     >
                       <item.icon className="size-4 shrink-0 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
                       {contentVisible && (
                         <>
-                          <span className="min-w-0 flex-1 truncate">{s.nav[item.id] ?? item.label}</span>
+                          <span className="min-w-0 flex-1 truncate">{label}</span>
                           {isNewSession && (
                             <KbdGroup
                               className={cn('ml-auto opacity-55', newSessionKbdFlash && 'opacity-100!')}
