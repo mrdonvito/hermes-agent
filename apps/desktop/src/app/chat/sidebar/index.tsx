@@ -823,6 +823,7 @@ export function ChatSidebar({
 
                 const isNewSession = item.id === 'new-session'
                 const label = s.nav[item.id] || item.label
+                const showTextLabel = contentVisible || item.id === 'work-queue'
 
                 return (
                   <SidebarMenuItem key={item.id}>
@@ -857,10 +858,10 @@ export function ChatSidebar({
                       type="button"
                     >
                       <item.icon className="size-4 shrink-0 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
-                      {contentVisible && (
+                      {showTextLabel && (
                         <>
                           <span className="min-w-0 flex-1 truncate">{label}</span>
-                          {isNewSession && (
+                          {contentVisible && isNewSession && (
                             <KbdGroup
                               className={cn('ml-auto opacity-55', newSessionKbdFlash && 'opacity-100!')}
                               keys={[...NEW_SESSION_KBD]}
