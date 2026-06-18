@@ -43,6 +43,7 @@ import { profileColor } from '@/lib/profile-color'
 import { sessionMatchesSearch } from '@/lib/session-search'
 import { normalizeSessionSource, sessionSourceLabel } from '@/lib/session-source'
 import { cn } from '@/lib/utils'
+import { $approvalCenterItems } from '@/store/approval-center'
 import { $cronJobs } from '@/store/cron'
 import {
   $panesFlipped,
@@ -334,6 +335,7 @@ export function ChatSidebar({
   const overlayMounted = useStore($sidebarOverlayMounted)
   const contentVisible = sidebarOpen || overlayMounted
   const panesFlipped = useStore($panesFlipped)
+  const pendingApprovalCount = useStore($approvalCenterItems).filter(item => item.status === 'pending').length
 
   const agentsGrouped = useStore($sidebarAgentsGrouped)
   const pinnedSessionIds = useStore($pinnedSessionIds)
@@ -861,10 +863,22 @@ export function ChatSidebar({
                       tooltip={label}
                       type="button"
                     >
-                      <item.icon className="size-4 shrink-0 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
+                      <span className="relative shrink-0">
+                        <item.icon className="size-4 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
+                        {item.id === 'approvals' && pendingApprovalCount > 0 && (
+                          <span className="absolute -right-1.5 -top-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-semibold leading-3 text-destructive-foreground shadow-sm ring-1 ring-background">
+                            {pendingApprovalCount > 9 ? '9+' : pendingApprovalCount}
+                          </span>
+                        )}
+                      </span>
                       {contentVisible && (
                         <>
                           <span className="min-w-0 flex-1 truncate">{label}</span>
+                          {item.id === 'approvals' && pendingApprovalCount > 0 && (
+                            <span className="ml-auto rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-destructive">
+                              {pendingApprovalCount}
+                            </span>
+                          )}
                           {contentVisible && isNewSession && (
                             <KbdGroup
                               className={cn('ml-auto opacity-55', newSessionKbdFlash && 'opacity-100!')}
