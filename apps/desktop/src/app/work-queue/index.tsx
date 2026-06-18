@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
-import { archiveWorkQueueItem, getWorkQueue, snoozeWorkQueueItem, updateWorkQueueItem, type WorkQueueItem } from '@/hermes'
+import { archiveWorkQueueItem, createWorkQueueItem, getWorkQueue, snoozeWorkQueueItem, updateWorkQueueItem, type WorkQueueItem } from '@/hermes'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 
@@ -117,6 +117,24 @@ export function WorkQueueView({ onClose }: WorkQueueViewProps) {
     [refresh]
   )
 
+  const createSampleItem = useCallback(
+    () =>
+      mutate(
+        () =>
+          createWorkQueueItem({
+            title: 'Review sample work item',
+            summary: 'This is a manual test item to confirm the Work Queue is saving and displaying items.',
+            detail: 'Archive or mark this done after confirming the Work Queue works.',
+            source: 'manual',
+            status: 'needs_review',
+            priority: 'normal',
+            actions: ['mark_done', 'archive', 'snooze']
+          }),
+        'Created sample work item'
+      ),
+    [mutate]
+  )
+
   const openSelected = useCallback(() => {
     if (!selected?.source_url) {
       return
@@ -144,10 +162,18 @@ export function WorkQueueView({ onClose }: WorkQueueViewProps) {
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(320px,0.45fr)] gap-4">
             <div className="min-h-0 overflow-y-auto rounded-lg border bg-card/40">
               {items.length === 0 ? (
-                <div className="flex h-full min-h-80 flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+                <div className="flex h-full min-h-80 flex-col items-center justify-center gap-3 px-6 text-center text-muted-foreground">
                   <Codicon className="size-8" name="check-all" />
-                  <div className="text-sm font-medium text-foreground">Queue is clear</div>
-                  <div className="max-w-sm text-xs">No failed cron jobs, running desktop actions, active sessions, or manual items need attention.</div>
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-foreground">No work items yet</div>
+                    <div className="max-w-md text-xs">
+                      Failed or paused cron jobs, running desktop actions, active sessions, and manual follow-ups will appear here when they need attention.
+                    </div>
+                  </div>
+                  <Button onClick={() => void createSampleItem()} size="sm" variant="outline">
+                    <Codicon className="mr-2 size-4" name="add" />
+                    Create sample item
+                  </Button>
                 </div>
               ) : (
                 <div className="divide-y">
