@@ -1,8 +1,11 @@
 import { useStore } from '@nanostores/react'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { useElapsedSeconds } from '@/components/chat/activity-timer'
 import { ActivityTimerText } from '@/components/chat/activity-timer-text'
+import { Button } from '@/components/ui/button'
+import { Codicon } from '@/components/ui/codicon'
 import { FadeText } from '@/components/ui/fade-text'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { type Translations, useI18n } from '@/i18n'
@@ -14,8 +17,10 @@ import {
   $subagentsBySession,
   buildSubagentTree,
   type SubagentNode,
+  type SubagentProgress,
   type SubagentStatus,
-  type SubagentStreamEntry
+  type SubagentStreamEntry,
+  upsertSubagent
 } from '@/store/subagents'
 
 import { OverlayView } from '../overlays/overlay-view'
@@ -75,31 +80,220 @@ interface AgentsViewProps {
   onClose: () => void
 }
 
+interface SessionDelegationSummary {
+  active: number
+  failed: number
+  id: string
+  items: SubagentProgress[]
+  latest: number
+  total: number
+}
+
+const isActiveStatus = (status: SubagentStatus) => status === 'running' || status === 'queued'
+const isFailedStatus = (status: SubagentStatus) => status === 'failed' || status === 'interrupted'
+
+function summarizeSession(id: string, items: SubagentProgress[]): SessionDelegationSummary {
+  return {
+    active: items.filter(item => isActiveStatus(item.status)).length,
+    failed: items.filter(item => isFailedStatus(item.status)).length,
+    id,
+    items,
+    latest: items.reduce((max, item) => Math.max(max, item.updatedAt), 0),
+    total: items.length
+  }
+}
+
+function seedSampleDelegation() {
+  const sid = `sample-delegation-${Date.now().toString(36)}`
+
+  upsertSubagent(sid, {
+    child_session_id: `${sid}-research`,
+    goal: 'Research implementation options for the requested feature',
+    model: 'nova · gpt-5.5',
+    output_tail: [{ preview: 'Checked existing routes and component boundaries.' }],
+    status: 'completed',
+    subagent_id: `${sid}:research`,
+    summary: 'Found the safest vertical slice and integration points.',
+    task_count: 3,
+    task_index: 0,
+    tool_count: 4
+  }, true, 'subagent.stop')
+  upsertSubagent(sid, {
+    child_session_id: `${sid}-build`,
+    files_written: ['apps/desktop/src/app/agents/index.tsx'],
+    goal: 'Build the dashboard shell and session rollups',
+    model: 'gina · gpt-5.3-codex',
+    output_tail: [{ preview: 'Rendering global delegation metrics and worker groups.' }],
+    status: 'running',
+    subagent_id: `${sid}:build`,
+    task_count: 3,
+    task_index: 1,
+    tool_count: 7
+  }, true, 'subagent.progress')
+  upsertSubagent(sid, {
+    child_session_id: `${sid}-qa`,
+    goal: 'Smoke test dashboard states and failure visibility',
+    model: 'crosby · gpt-5.5',
+    output_tail: [{ is_error: true, preview: 'Waiting on Mac dev app smoke test.' }],
+    status: 'failed',
+    subagent_id: `${sid}:qa`,
+    summary: 'QA is blocked until the Mac dev app is available.',
+    task_count: 3,
+    task_index: 2,
+    tool_count: 2
+  }, true, 'subagent.stop')
+
+  return sid
+}
+
 export function AgentsView({ onClose }: AgentsViewProps) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const activeSessionId = useStore($activeSessionId)
   const subagentsBySession = useStore($subagentsBySession)
+  const [selectedSessionId, setSelectedSessionId] = useState<null | string>(null)
 
-  const activeSubagents = useMemo(
-    () => (activeSessionId ? (subagentsBySession[activeSessionId] ?? []) : []),
-    [activeSessionId, subagentsBySession]
+  const sessions = useMemo(
+    () =>
+      Object.entries(subagentsBySession)
+        .filter(([, items]) => items.length > 0)
+        .map(([id, items]) => summarizeSession(id, items))
+        .sort((a, b) => Number(b.active > 0) - Number(a.active > 0) || b.latest - a.latest || a.id.localeCompare(b.id)),
+    [subagentsBySession]
   )
 
-  const tree = useMemo(() => buildSubagentTree(activeSubagents), [activeSubagents])
+  useEffect(() => {
+    if (activeSessionId && subagentsBySession[activeSessionId]?.length) {
+      setSelectedSessionId(current => current ?? activeSessionId)
+    }
+  }, [activeSessionId, subagentsBySession])
+
+  useEffect(() => {
+    if (selectedSessionId && subagentsBySession[selectedSessionId]?.length) {
+      return
+    }
+
+    setSelectedSessionId(sessions[0]?.id ?? null)
+  }, [selectedSessionId, sessions, subagentsBySession])
+
+  const selected = useMemo(
+    () => sessions.find(session => session.id === selectedSessionId) ?? sessions[0] ?? null,
+    [selectedSessionId, sessions]
+  )
+
+  const tree = useMemo(() => buildSubagentTree(selected?.items ?? []), [selected])
+  const allItems = sessions.flatMap(session => session.items)
+  const allAgents = allItems.length
+  const activeAgents = allItems.filter(item => isActiveStatus(item.status)).length
+  const failedAgents = allItems.filter(item => isFailedStatus(item.status)).length
+  const completedAgents = allItems.filter(item => item.status === 'completed').length
+  const selectedIsSample = selected?.id.startsWith('sample-delegation-') ?? false
+
+  const createSample = useCallback(() => {
+    setSelectedSessionId(seedSampleDelegation())
+  }, [])
+
+  const openSelectedSession = useCallback(() => {
+    if (!selected) {
+      return
+    }
+
+    navigate(`/${encodeURIComponent(selected.id)}`)
+  }, [navigate, selected])
 
   return (
     <OverlayView
       closeLabel={t.agents.close}
       contentClassName="px-5 pt-5 pb-4 sm:px-6"
       onClose={onClose}
-      rootClassName="mx-auto max-w-3xl"
+      rootClassName="mx-auto max-w-6xl"
     >
-      <header className="mb-3 shrink-0">
-        <h2 className="text-sm font-semibold text-foreground">{t.agents.title}</h2>
-        <p className="text-xs text-muted-foreground/80">{t.agents.subtitle}</p>
+      <header className="mb-4 flex shrink-0 items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Multi-agent delegation dashboard</h2>
+          <p className="text-xs text-muted-foreground/80">Watch delegated workers across sessions, spot failures, and jump back into the parent thread.</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button onClick={createSample} size="sm" variant="outline">
+            <Codicon className="mr-2 size-4" name="add" />
+            Create sample delegation
+          </Button>
+          {selected && !selectedIsSample ? (
+            <Button onClick={openSelectedSession} size="sm" variant="outline">
+              <Codicon className="mr-2 size-4" name="go-to-file" />
+              Open session
+            </Button>
+          ) : null}
+        </div>
       </header>
-      <SubagentTree tree={tree} />
+
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(220px,0.34fr)_minmax(0,1fr)] gap-4 overflow-hidden">
+        <aside className="flex min-h-0 flex-col gap-3 overflow-hidden rounded-lg border bg-card/40 p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <MetricCard label="Agents" value={allAgents} />
+            <MetricCard label="Running" tone="text-primary" value={activeAgents} />
+            <MetricCard label="Done" tone="text-emerald-600 dark:text-emerald-400" value={completedAgents} />
+            <MetricCard label="Needs review" tone="text-destructive" value={failedAgents} />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {sessions.length === 0 ? (
+              <div className="grid min-h-52 place-items-center gap-3 px-3 text-center text-muted-foreground/75">
+                <div className="space-y-2">
+                  <Sparkles className="mx-auto size-6 text-muted-foreground/60" />
+                  <p className="text-sm font-medium text-foreground/90">No delegated agents yet</p>
+                  <p className="text-xs leading-relaxed">Run a delegated task or create a local sample to verify the dashboard wiring.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-1">
+                {sessions.map(session => (
+                  <button
+                    className={cn(
+                      'grid gap-1 rounded-md px-2.5 py-2 text-left text-xs transition-colors hover:bg-muted/60',
+                      selected?.id === session.id && 'bg-muted text-foreground'
+                    )}
+                    key={session.id}
+                    onClick={() => setSelectedSessionId(session.id)}
+                    type="button"
+                  >
+                    <span className="truncate font-medium">{session.id}</span>
+                    <span className="flex flex-wrap gap-2 text-[0.68rem] text-muted-foreground/75">
+                      <span>{session.total} workers</span>
+                      {session.active ? <span className="text-primary">{session.active} running</span> : null}
+                      {session.failed ? <span className="text-destructive">{session.failed} failed</span> : null}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <section className="min-h-0 overflow-hidden rounded-lg border bg-card/40 p-4">
+          {selected ? (
+            <div className="flex h-full min-h-0 flex-col gap-3">
+              <div className="shrink-0 border-b pb-3">
+                <p className="truncate text-xs font-medium text-muted-foreground">Selected session</p>
+                <p className="truncate text-sm font-semibold text-foreground">{selected.id}</p>
+              </div>
+              <SubagentTree tree={tree} />
+            </div>
+          ) : (
+            <SubagentTree tree={[]} />
+          )}
+        </section>
+      </div>
     </OverlayView>
+  )
+}
+
+function MetricCard({ label, tone, value }: { label: string; tone?: string; value: number }) {
+  return (
+    <div className="rounded-md border bg-background/60 p-2">
+      <div className={cn('text-lg font-semibold leading-none', tone)}>{value}</div>
+      <div className="mt-1 text-[0.65rem] uppercase tracking-wide text-muted-foreground/70">{label}</div>
+    </div>
   )
 }
 

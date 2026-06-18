@@ -95,7 +95,7 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE, WORK_QUEUE_ROUTE } from '../../routes'
+import { AGENTS_ROUTE, type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE, WORK_QUEUE_ROUTE } from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import type { SidebarNavItem } from '../../types'
 
@@ -131,6 +131,7 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
     route: SKILLS_ROUTE
   },
   { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
+  { id: 'agents', label: 'Agents', icon: props => <Codicon name="organization" {...props} />, route: AGENTS_ROUTE },
   { id: 'work-queue', label: 'Work Queue', icon: props => <Codicon name="checklist" {...props} />, route: WORK_QUEUE_ROUTE },
   { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }
 ]
@@ -819,6 +820,7 @@ export function ChatSidebar({
                 const active =
                   (item.id === 'skills' && currentView === 'skills') ||
                   (item.id === 'messaging' && currentView === 'messaging') ||
+                  (item.id === 'agents' && currentView === 'agents') ||
                   (item.id === 'artifacts' && currentView === 'artifacts') ||
                   (item.id === 'work-queue' && currentView === 'work-queue')
 
