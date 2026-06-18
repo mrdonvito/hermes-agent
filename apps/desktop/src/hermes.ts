@@ -4,6 +4,7 @@ import type {
   ActionResponse,
   ActionStatusResponse,
   AnalyticsResponse,
+  ArtifactPreviewResponse,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
   AuxiliaryModelsResponse,
@@ -58,6 +59,7 @@ export type {
   AnalyticsSkillEntry,
   AnalyticsSkillsSummary,
   AnalyticsTotals,
+  ArtifactPreviewResponse,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
   AuxiliaryModelsResponse,
@@ -762,6 +764,12 @@ export function updateHermes(): Promise<ActionResponse> {
 export function checkHermesUpdate(force = false): Promise<BackendUpdateCheckResponse> {
   return window.hermesDesktop.api<BackendUpdateCheckResponse>({
     path: `/api/hermes/update/check${force ? '?force=true' : ''}`
+  })
+}
+
+export function previewArtifact(path: string): Promise<ArtifactPreviewResponse> {
+  return window.hermesDesktop.api<ArtifactPreviewResponse>({
+    path: `/api/artifacts/preview?path=${encodeURIComponent(path)}`
   })
 }
 
