@@ -773,6 +773,13 @@ export function previewArtifact(path: string): Promise<ArtifactPreviewResponse> 
   })
 }
 
+export function createSampleArtifactPreview(): Promise<ArtifactPreviewResponse> {
+  return window.hermesDesktop.api<ArtifactPreviewResponse>({
+    path: '/api/artifacts/sample-preview',
+    method: 'POST'
+  })
+}
+
 export function getActionStatus(name: string, lines = 200): Promise<ActionStatusResponse> {
   return window.hermesDesktop.api<ActionStatusResponse>({
     path: `/api/actions/${encodeURIComponent(name)}/status?lines=${Math.max(1, lines)}`

@@ -63,7 +63,6 @@ import {
   setPinnedSessionOrder,
   setSidebarAgentsGrouped,
   setSidebarCronOpen,
-  setSidebarOpen,
   setSidebarPinsOpen,
   setSidebarRecentsOpen,
   setSidebarSessionOrderIds,
@@ -334,11 +333,6 @@ export function ChatSidebar({
   const contentVisible = sidebarOpen || overlayMounted
   const panesFlipped = useStore($panesFlipped)
 
-  useEffect(() => {
-    if (currentView === 'work-queue' && !sidebarOpen) {
-      setSidebarOpen(true)
-    }
-  }, [currentView, sidebarOpen])
   const agentsGrouped = useStore($sidebarAgentsGrouped)
   const pinnedSessionIds = useStore($pinnedSessionIds)
   const pinsOpen = useStore($sidebarPinsOpen)
@@ -830,7 +824,6 @@ export function ChatSidebar({
 
                 const isNewSession = item.id === 'new-session'
                 const label = s.nav[item.id] || item.label
-                const showTextLabel = contentVisible || item.id === 'work-queue'
 
                 return (
                   <SidebarMenuItem key={item.id}>
@@ -865,7 +858,7 @@ export function ChatSidebar({
                       type="button"
                     >
                       <item.icon className="size-4 shrink-0 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
-                      {showTextLabel && (
+                      {contentVisible && (
                         <>
                           <span className="min-w-0 flex-1 truncate">{label}</span>
                           {contentVisible && isNewSession && (

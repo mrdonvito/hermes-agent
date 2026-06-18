@@ -1539,6 +1539,34 @@ async def preview_artifact(request: Request, path: str):
     return response
 
 
+@app.post("/api/artifacts/sample-preview")
+async def create_artifact_sample_preview(request: Request):
+    """Create and preview a tiny local sample artifact in the managed files area.
+
+    This gives the desktop Artifacts page a deterministic smoke test that does
+    not require the user to hand-create a file or paste a machine-specific
+    absolute path. Local desktop dashboards write the sample under Hermes home;
+    hosted/locked dashboards write it under the configured managed files root
+    so the same preview security policy can read it back.
+    """
+    policy = _managed_files_policy(request)
+    sample_root = policy.locked_root or get_hermes_home()
+    sample_dir = sample_root / "artifacts" / "samples"
+    try:
+        sample_dir.mkdir(parents=True, exist_ok=True)
+        sample_path = sample_dir / "artifact-viewer-sample.md"
+        sample_path.write_text(
+            "# Hermes Artifact Viewer Sample\n\n"
+            "If you can read this inside Hermes Desktop, Markdown artifact preview is working.\n\n"
+            "This file was generated in Hermes' managed files area as a local smoke test.\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"Could not create sample artifact: {exc}")
+
+    return await preview_artifact(request, path=str(sample_path))
+
+
 @app.get("/api/files/download")
 async def download_managed_file(request: Request, path: str):
     """Stream a managed file as an attachment download.

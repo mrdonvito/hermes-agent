@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/pagination'
 import { TextTab, TextTabMeta } from '@/components/ui/text-tab'
 import { Tip } from '@/components/ui/tooltip'
-import { getSessionMessages, listAllProfileSessions, previewArtifact } from '@/hermes'
+import { createSampleArtifactPreview, getSessionMessages, listAllProfileSessions, previewArtifact } from '@/hermes'
 import { type Translations, useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
 import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
@@ -442,6 +442,20 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     }
   }, [])
 
+  const loadSamplePreview = useCallback(async () => {
+    setPreviewLoading(true)
+
+    try {
+      const sample = await createSampleArtifactPreview()
+      setManualPreviewPath(sample.path)
+      setPreview(sample)
+    } catch (err) {
+      notifyError(err, 'Sample artifact preview failed')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }, [])
+
   const refreshArtifacts = useCallback(async () => {
     setRefreshing(true)
 
@@ -635,6 +649,9 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
             />
             <Button disabled={previewLoading || !manualPreviewPath.trim()} size="sm" type="submit" variant="secondary">
               {previewLoading ? 'Loading…' : 'Preview'}
+            </Button>
+            <Button disabled={previewLoading} onClick={() => void loadSamplePreview()} size="sm" type="button" variant="outline">
+              Preview sample
             </Button>
           </form>
 

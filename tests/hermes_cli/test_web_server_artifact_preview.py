@@ -83,3 +83,17 @@ def test_preview_rejects_path_outside_locked_root(client, tmp_path):
     resp = test_client.get("/api/artifacts/preview", params={"path": str(outside)})
 
     assert resp.status_code == 403
+
+
+def test_sample_preview_creates_managed_markdown_preview(client):
+    test_client, root = client
+
+    resp = test_client.post("/api/artifacts/sample-preview")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["name"] == "artifact-viewer-sample.md"
+    assert data["preview_type"] == "markdown"
+    assert "Markdown artifact preview is working" in data["text"]
+    assert data["path"].startswith(str(root))
+    assert (root / "artifacts" / "samples" / "artifact-viewer-sample.md").exists()
