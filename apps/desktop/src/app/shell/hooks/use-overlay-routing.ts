@@ -14,6 +14,7 @@ export function useOverlayRouting() {
   const settingsOpen = currentView === 'settings'
   const commandCenterOpen = currentView === 'command-center'
   const agentsOpen = currentView === 'agents'
+  const approvalsOpen = currentView === 'approvals'
   const cronOpen = currentView === 'cron'
   const profilesOpen = currentView === 'profiles'
   const workQueueOpen = currentView === 'work-queue'
@@ -57,6 +58,7 @@ export function useOverlayRouting() {
 
   return {
     agentsOpen,
+    approvalsOpen,
     chatOpen,
     closeOverlayToPreviousRoute,
     commandCenterInitialSection,

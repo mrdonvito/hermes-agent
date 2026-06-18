@@ -6,12 +6,14 @@ export const SKILLS_ROUTE = '/skills'
 export const MESSAGING_ROUTE = '/messaging'
 export const WORK_QUEUE_ROUTE = '/work-queue'
 export const ARTIFACTS_ROUTE = '/artifacts'
+export const APPROVALS_ROUTE = '/approvals'
 export const CRON_ROUTE = '/cron'
 export const PROFILES_ROUTE = '/profiles'
 export const AGENTS_ROUTE = '/agents'
 
 export type AppView =
   | 'agents'
+  | 'approvals'
   | 'artifacts'
   | 'chat'
   | 'command-center'
@@ -24,6 +26,7 @@ export type AppView =
 
 export type AppRouteId =
   | 'agents'
+  | 'approvals'
   | 'artifacts'
   | 'command-center'
   | 'cron'
@@ -48,6 +51,7 @@ export const APP_ROUTES = [
   { id: 'messaging', path: MESSAGING_ROUTE, view: 'messaging' },
   { id: 'work-queue', path: WORK_QUEUE_ROUTE, view: 'work-queue' },
   { id: 'artifacts', path: ARTIFACTS_ROUTE, view: 'artifacts' },
+  { id: 'approvals', path: APPROVALS_ROUTE, view: 'approvals' },
   { id: 'cron', path: CRON_ROUTE, view: 'cron' },
   { id: 'profiles', path: PROFILES_ROUTE, view: 'profiles' },
   { id: 'agents', path: AGENTS_ROUTE, view: 'agents' }
@@ -59,7 +63,7 @@ const RESERVED_PATHS: ReadonlySet<string> = new Set(APP_ROUTES.map(route => rout
 // Views that render as a full-screen modal card (OverlayView) over the shell.
 // While one is open the app's titlebar control clusters must hide so they don't
 // bleed over the overlay (they sit at a higher z-index than the overlay card).
-export const OVERLAY_VIEWS: ReadonlySet<AppView> = new Set(['agents', 'command-center', 'cron', 'profiles', 'settings', 'work-queue'])
+export const OVERLAY_VIEWS: ReadonlySet<AppView> = new Set(['agents', 'approvals', 'command-center', 'cron', 'profiles', 'settings', 'work-queue'])
 
 export function isOverlayView(view: AppView): boolean {
   return OVERLAY_VIEWS.has(view)

@@ -129,6 +129,7 @@ import { useGroupRegistry } from './shell/use-group-registry'
 import { UpdatesOverlay } from './updates-overlay'
 
 const AgentsView = lazy(async () => ({ default: (await import('./agents')).AgentsView }))
+const ApprovalCenterView = lazy(async () => ({ default: (await import('./approvals')).ApprovalCenterView }))
 const ArtifactsView = lazy(async () => ({ default: (await import('./artifacts')).ArtifactsView }))
 const CommandCenterView = lazy(async () => ({ default: (await import('./command-center')).CommandCenterView }))
 const CronView = lazy(async () => ({ default: (await import('./cron')).CronView }))
@@ -224,6 +225,7 @@ export function DesktopController() {
 
   const {
     agentsOpen,
+    approvalsOpen,
     chatOpen,
     closeOverlayToPreviousRoute,
     commandCenterInitialSection,
@@ -1013,6 +1015,12 @@ export function DesktopController() {
         </Suspense>
       )}
 
+      {approvalsOpen && (
+        <Suspense fallback={null}>
+          <ApprovalCenterView onClose={closeOverlayToPreviousRoute} />
+        </Suspense>
+      )}
+
       {cronOpen && (
         <Suspense fallback={null}>
           <CronView
@@ -1193,6 +1201,7 @@ export function DesktopController() {
           <Route element={null} path="settings" />
           <Route element={null} path="command-center" />
           <Route element={null} path="agents" />
+          <Route element={null} path="approvals" />
           <Route element={null} path="work-queue" />
           <Route element={<Navigate replace to={NEW_CHAT_ROUTE} />} path="new" />
           <Route element={<LegacySessionRedirect />} path="sessions/:sessionId" />

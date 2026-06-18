@@ -22,6 +22,7 @@ interface KeyedPrompt {
 
 interface PromptStore<T extends KeyedPrompt> {
   $active: ReadableAtom<null | T>
+  $all: ReadableAtom<Record<string, T>>
   clear: (sessionId?: string | null, requestId?: string) => void
   reset: () => void
   set: (request: T) => void
@@ -37,6 +38,7 @@ function keyedPromptStore<T extends KeyedPrompt>(): PromptStore<T> {
 
   return {
     $active: computed([$all, $activeSessionId], (all, activeId) => all[keyFor(activeId)] ?? null),
+    $all,
     reset: () => $all.set({}),
     set: request => $all.set({ ...$all.get(), [keyFor(request.sessionId)]: request }),
     clear(sessionId, requestId) {
@@ -89,6 +91,7 @@ const sudo = keyedPromptStore<SudoRequest>()
 const secret = keyedPromptStore<SecretRequest>()
 
 export const $approvalRequest = approval.$active
+export const $approvalRequests = approval.$all
 export const setApprovalRequest = approval.set
 export const clearApprovalRequest = approval.clear
 
