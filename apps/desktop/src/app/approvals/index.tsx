@@ -147,7 +147,7 @@ export function ApprovalCenterView({ onClose }: ApprovalCenterViewProps) {
         <div>
           <h2 className="text-sm font-semibold text-foreground">Approval Center</h2>
           <p className="text-xs text-muted-foreground/80">Review pending approvals before Hermes runs commands, sends messages, or touches external systems.</p>
-          <p className="mt-1 text-[11px] text-muted-foreground/70">Live smoke test: in a Desktop chat, ask Hermes to run a harmless terminal command like `pwd`. If approval is required, it appears here and the sidebar badge lights up.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground/70">Live smoke test: in a Desktop chat with YOLO off, ask Hermes to run `rm -rf /tmp/hermes-approval-smoke-test`. Safe commands like `pwd` or `touch` usually do not require approval.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button onClick={createSamples} size="sm" variant="outline">
